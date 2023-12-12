@@ -1,2 +1,2 @@
 # lemonic
-A useful C header file for games!
+Some useful C header and implementation files for games!
