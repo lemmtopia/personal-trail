@@ -43,13 +43,7 @@ typedef struct
     float x, y;
 } v2;
 
-typedef struct
-{
-    void* data;
-    int w, h;
-} tex; // RRGGBB
-
-static v2 v2_mult_scalar(v2 vec, float scalar);
-static v2 v2_normalize(v2 vec);
+v2 v2_mult_scalar(v2 vec, float scalar);
+v2 v2_normalize(v2 vec);
 
 #endif
