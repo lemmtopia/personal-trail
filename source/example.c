@@ -3,12 +3,11 @@
 
 int main(void)
 {
-    v2 v ={1.2, 0.9};
-    printf("Vec: {%f, %f}\n", v.x, v.y);
-    v = v2_mult_scalar(v, 3);
-    printf("Vec after multiplication: {%f, %f}\n", v.x, v.y);
-    v = v2_normalize(v);
-    printf("Vec after normalization: {%f, %f}\n", v.x, v.y);
-
+    v2 vec = {0.2, 1};
+    printf("(%f, %f)\n", vec.x, vec.y);
+    vec = v2_mult_scalar(vec, 2);
+    printf("(%f, %f)\n", vec.x, vec.y);
+    vec = v2_normalize(vec);
+    printf("(%f, %f)\n", vec.x, vec.y);
     return 0;
 }

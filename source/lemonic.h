@@ -3,6 +3,10 @@
 
 #define LEMONIC_VERSION "0.69"
 
+#ifndef LAPI
+#define LAPI
+#endif
+
 // Basic Defines
 #ifdef PI
 #undef PI
@@ -20,7 +24,7 @@
 #define LEMONIC_ERROR -1
 #define LEMONIC_SUCCESS 0
 
-#define ASSERT(cond) return cond - 1 // ERROR or SUCCESS
+#define ASSERT(cond) if (!cond) return LEMONIC_ERROR
 
 // Window defines
 #define WIDTH 320
@@ -28,7 +32,7 @@
 #define SCALE 2
 
 #define FPS 60
-#define TARGET_FRAME_TIME 1000 / 60
+#define TARGET_FRAME_TIME 1000 / FPS
 
 // Some colors
 #define RED 0xDA122A
@@ -43,7 +47,7 @@ typedef struct
     float x, y;
 } v2;
 
-v2 v2_mult_scalar(v2 vec, float scalar);
-v2 v2_normalize(v2 vec);
+LAPI v2 v2_mult_scalar(v2 vec, float scalar);
+LAPI v2 v2_normalize(v2 vec);
 
 #endif
