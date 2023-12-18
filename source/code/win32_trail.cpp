@@ -1,12 +1,72 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include "trail.h"
+
 static bool running = false;
 
 static void *bitmap_memory;
 static BITMAPINFO bitmap_info;
 static int bitmap_width, bitmap_height;
 static int bytes_per_pixel = 4;
+
+static int time = 0;
+
+entity_t player;
+entity_t wall;
+
+entity_t make_entity(
+		     int x,
+		     int y,
+		     int width,
+		     int height,
+                     u32 color)
+{
+  entity_t ent;
+
+  ent.x = x;
+  ent.y = y;
+  ent.width = width;
+  ent.height = height;
+  ent.color = color;
+    
+  return ent;
+}
+
+static void render_vaporwave()
+{
+  u8* row = (u8*)bitmap_memory;
+  int line_offset = bitmap_width * bytes_per_pixel;
+  for (int i = 0; i < bitmap_height; i++)
+    {
+      u32* pixel = (u32*)row;
+      for (int j = 0; j < bitmap_width; j++)
+	{
+	  *pixel = i * j + time; // set the value that pixel is pointing to
+	  pixel++; // offset pixel by one (move to the next memory address)
+	}
+      row += line_offset;
+    }
+}
+
+static void draw_rectangle(int x, int y, int width, int height, u32 color)
+{
+  u8* row = (u8*)bitmap_memory;
+  int line_offset = bitmap_width * bytes_per_pixel;
+  for (int i = 0; i < height; i++)
+    {
+      u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
+      for (int j = 0; j < width; j++)
+	{
+	  if (i > 0 && i < bitmap_height - height && j > 0 && j < bitmap_width - width)
+	    {
+	      *pixel = color; // set the value that pixel is pointing to
+	      pixel++; // offset pixel by one (move to the next memory address)
+	    }
+	}
+      row += line_offset;
+    }
+}
 
 static void win32_resize_dib_section(
 				     int width,
@@ -82,6 +142,22 @@ LRESULT CALLBACK window_proc(
       {
 	running = false;
       } break;
+    case WM_KEYDOWN:
+      {
+	if (wparam == 'D')
+	  {
+      	    player.x += 4;        
+	  }
+	else if (wparam == 'A')
+	  {
+	    player.x -= 4;
+	  }
+
+	if (wparam == 'K')
+	  {
+	    player.width += 4;
+	  }
+      } break;
     default:
       {
 	result = DefWindowProcA(window, message, wparam, lparam);
@@ -117,6 +193,10 @@ int WINAPI WinMain(
   if (window_handle)
     {
       running = true;
+
+      player = make_entity(20, 20, 40, 90, 0xFF00FF);
+      wall = make_entity(200, 80, 50, 80, 0x0000FF);
+      
       while (running)
 	{
 	  MSG message;
@@ -126,6 +206,12 @@ int WINAPI WinMain(
 	      DispatchMessage(&message);
 	    }
 
+	  time += 10;
+	  render_vaporwave();
+	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
+	  draw_rectangle(player.x, player.y, player.width, player.height, player.color);
+	  draw_rectangle(wall.x, wall.y, wall.width, wall.height, wall.color);
+	  
 	  HDC device_context = GetWindowDC(window_handle);
 
 	  RECT window_rect;
