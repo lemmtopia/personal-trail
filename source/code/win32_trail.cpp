@@ -221,6 +221,7 @@ int WINAPI WinMain(
 	  int window_height = window_rect.bottom - window_rect.top;
 	  
 	  win32_update_window(device_context, window_width, window_height);
+	  ReleaseDC(window_handle, device_context);
 	}
     }
   
