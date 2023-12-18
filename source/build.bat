@@ -1,6 +1,6 @@
 @echo off
 
-set CCFLAGS=-Wall
+set CCFLAGS=-g -Wall
 set LDFLAGS=-luser32 -lgdi32
 
-clang++ %CCFLAGS% code\win32_trail.cpp -o game.exe %LDFLAGS%
+clang++ %CCFLAGS% code\win32_trail.cpp -o bin\game.exe %LDFLAGS%
