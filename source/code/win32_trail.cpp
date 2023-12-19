@@ -53,10 +53,10 @@ static void draw_sprite(sprite_t sprite, int x, int y)
   u8* row = (u8*)bitmap_memory;
   int line_offset = bitmap_width * bytes_per_pixel;
 
-  for (int i = 0; i < sprite.height; i++)
+  for (int i = sprite.height; i > 0; i--)
     {
       u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
-      for (int j = 0; j < sprite.height; j++)
+      for (int j = 0; j < sprite.width; j++)
 	{
 	  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
           pixel++; // offset pixel by one (move to the next memory address)
