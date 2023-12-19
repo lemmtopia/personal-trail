@@ -8,7 +8,7 @@ typedef uint32_t u32;
 
 struct entity_t
 {
-  int x, y, width, height;
+  float x, y, width, height;
   float dx, dy;
   u32 color;
 };

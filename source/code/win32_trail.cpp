@@ -1,5 +1,9 @@
 #define WIN32_LEAN_AND_MEAN
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <windows.h>
+#include <xinput.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,6 +20,21 @@ static int time = 0;
 
 entity_t player;
 entity_t wall;
+
+typedef DWORD WINAPI win32_xinput_get_state(DWORD dwUserIndex, XINPUT_STATE* pState);
+static win32_xinput_get_state* win32_XInputGetState;
+
+bool xinput_loaded;
+
+static void win32_load_xinput()
+{
+	HMODULE xinput_dll = LoadLibraryA("XInput1_4.dll");
+	if (xinput_dll)
+	{
+		win32_XInputGetState = (win32_xinput_get_state*)GetProcAddress(xinput_dll, "XInputGetState");
+		xinput_loaded = true;
+	}
+}
 
 static void load_ppm(sprite_t* sprite, const char* path)
 {
@@ -193,22 +212,6 @@ LRESULT CALLBACK window_proc(
       {
 	running = false;
       } break;
-    case WM_KEYDOWN:
-      {
-	if (wparam == 'D')
-	  {
-      	    player.x += 4;        
-	  }
-	else if (wparam == 'A')
-	  {
-	    player.x -= 4;
-	  }
-
-	if (wparam == 'K')
-	  {
-	    player.width += 4;
-	  }
-      } break;
     default:
       {
 	result = DefWindowProcA(window, message, wparam, lparam);
@@ -229,6 +232,7 @@ int WINAPI WinMain(
   window_class.lpfnWndProc = window_proc;
   window_class.hInstance = instance;
   window_class.style = CS_HREDRAW | CS_VREDRAW;
+  window_class.hCursor = LoadCursorA(NULL, IDC_ARROW);
 
   RegisterClassA(&window_class);
 
@@ -250,7 +254,9 @@ int WINAPI WinMain(
 
       sprite_t sprite;
       load_ppm(&sprite, "braid.ppm");
-      
+
+      win32_load_xinput();
+  
       while (running)
 	{
 	  MSG message;
@@ -260,12 +266,45 @@ int WINAPI WinMain(
 	      DispatchMessage(&message);
 	    }
 
+	  if (xinput_loaded)
+	    {
+	      for (int i = 0; i < XUSER_MAX_COUNT; i++)
+		{
+		  XINPUT_STATE controller_state;
+		  if (win32_XInputGetState(i, &controller_state) == ERROR_SUCCESS)
+		    {
+		      XINPUT_GAMEPAD* gamepad = &controller_state.Gamepad;
+		      
+		      bool button_a = (gamepad->wButtons & XINPUT_GAMEPAD_A);
+		      bool button_b = (gamepad->wButtons & XINPUT_GAMEPAD_B);
+		      bool button_x = (gamepad->wButtons & XINPUT_GAMEPAD_X);
+		      bool button_y = (gamepad->wButtons & XINPUT_GAMEPAD_Y);
+		      
+		      bool left = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+		      bool right = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+
+		      SHORT stick = gamepad->sThumbLX;
+		      
+		      
+		      if (stick < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE || stick > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
+			{
+			  player.dx = (float)stick / 30000;
+			}
+		     
+		      player.dx *= 0.92;
+		      
+		      player.x += player.dx;
+		      player.y += player.dy;
+		    }
+		}
+	    }
+	  
 	  time += 10;
 	  render_vaporwave();
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
 	  draw_rectangle(player.x, player.y, player.width, player.height, player.color);
-	  draw_rectangle(wall.x, wall.y, wall.width, wall.height, wall.color);
-	  draw_sprite(sprite, 20, 20);
+	  draw_rectangle((int)wall.x, (int)wall.y, (int)wall.width, (int)wall.height, (int)wall.color);
+	  draw_sprite(sprite, (int)player.x, (int)player.y);
 	  
 	  HDC device_context = GetWindowDC(window_handle);
 
