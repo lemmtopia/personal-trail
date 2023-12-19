@@ -1,5 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "trail.h"
 
@@ -14,6 +16,55 @@ static int time = 0;
 
 entity_t player;
 entity_t wall;
+
+static void load_ppm(sprite_t* sprite, const char* path)
+{
+  FILE* file = fopen(path, "rb");
+  if (file != NULL)
+    {
+      //TODO: Error handling
+
+      fscanf(file, "P6\n %d %d\n", &sprite->width, &sprite->height);
+      fseek(file, sizeof(char), SEEK_CUR);
+      sprite->pixels = (u32*)malloc(sprite->width * sprite->height * sizeof(u32));
+
+      printf("%d %d\n", sprite->width, sprite->height);
+
+      for (int i = 0; i < sprite->width * sprite->height; i++)
+	{
+	  char r, g, b;
+	  fread(&r, 1, 1, file);
+	  fread(&g, 1, 1, file);
+	  fread(&b, 1, 1, file);
+
+	  sprite->pixels[i] = (r << 16) | (g << 8) | b;
+	}
+	  
+      fclose(file);
+    }
+  else
+    {
+      printf("could not open file");
+    }
+}
+
+static void draw_sprite(sprite_t sprite, int x, int y)
+{
+  u8* row = (u8*)bitmap_memory;
+  int line_offset = bitmap_width * bytes_per_pixel;
+
+  for (int i = 0; i < sprite.height; i++)
+    {
+      u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
+      for (int j = 0; j < sprite.height; j++)
+	{
+	  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
+          pixel++; // offset pixel by one (move to the next memory address)
+	}
+      row += line_offset;
+    }
+
+}
 
 entity_t make_entity(
 		     int x,
@@ -196,6 +247,9 @@ int WINAPI WinMain(
 
       player = make_entity(20, 20, 40, 90, 0xFF00FF);
       wall = make_entity(200, 80, 50, 80, 0x0000FF);
+
+      sprite_t sprite;
+      load_ppm(&sprite, "braid.ppm");
       
       while (running)
 	{
@@ -211,6 +265,7 @@ int WINAPI WinMain(
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
 	  draw_rectangle(player.x, player.y, player.width, player.height, player.color);
 	  draw_rectangle(wall.x, wall.y, wall.width, wall.height, wall.color);
+	  draw_sprite(sprite, 20, 20);
 	  
 	  HDC device_context = GetWindowDC(window_handle);
 
