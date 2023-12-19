@@ -11,6 +11,8 @@ struct entity_t
   float x, y, width, height;
   float dx, dy;
   u32 color;
+  bool flip;
+  float speed;
 };
 
 struct sprite_t
@@ -25,6 +27,6 @@ static void render_vaporwave();
 static void draw_rectangle(int x, int y, int width, int height, u32 color);
 
 static void load_ppm(sprite_t* sprite, const char* path);
-static void draw_sprite(sprite_t sprite, int x, int y);
+static void draw_sprite(sprite_t sprite, int x, int y, bool flip);
 
 #endif

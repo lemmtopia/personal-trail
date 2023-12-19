@@ -67,7 +67,7 @@ static void load_ppm(sprite_t* sprite, const char* path)
     }
 }
 
-static void draw_sprite(sprite_t sprite, int x, int y)
+static void draw_sprite(sprite_t sprite, int x, int y, bool flip)
 {
   u8* row = (u8*)bitmap_memory;
   int line_offset = bitmap_width * bytes_per_pixel;
@@ -75,10 +75,22 @@ static void draw_sprite(sprite_t sprite, int x, int y)
   for (int i = sprite.height; i > 0; i--)
     {
       u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
-      for (int j = 0; j < sprite.width; j++)
+
+      if (!flip)
 	{
-	  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
-          pixel++; // offset pixel by one (move to the next memory address)
+	  for (int j = 0; j < sprite.width; j++)
+	    {
+	      *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
+	      pixel++; // offset pixel by one (move to the next memory address)
+	    }
+	}
+      else
+	{
+	   for (int j = sprite.width; j > 0; j--)
+	    {
+	      *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
+	      pixel++; // offset pixel by one (move to the next memory address)
+	    }
 	}
       row += line_offset;
     }
@@ -239,7 +251,7 @@ int WINAPI WinMain(
   HWND window_handle = CreateWindowA(
 				     window_class.lpszClassName,
 				     "Personal Trail",
-				     WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+				     WS_VISIBLE | WS_MINIMIZEBOX | WS_OVERLAPPED | WS_BORDER | WS_SYSMENU,
 				     CW_USEDEFAULT,
 				     CW_USEDEFAULT,
 				     640, 480,
@@ -249,12 +261,14 @@ int WINAPI WinMain(
     {
       running = true;
 
-      player = make_entity(20, 20, 40, 90, 0xFF00FF);
       wall = make_entity(200, 80, 50, 80, 0x0000FF);
 
       sprite_t sprite;
       load_ppm(&sprite, "braid.ppm");
+      player = make_entity(30, 20, sprite.width, sprite.height, 0xFF00FF);
 
+      player.speed = 0.69;
+      
       win32_load_xinput();
   
       while (running)
@@ -288,11 +302,28 @@ int WINAPI WinMain(
 		      
 		      if (stick < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE || stick > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
 			{
-			  player.dx = (float)stick / 30000;
+			  player.dx += (float)stick / 4000000;
+
+			  if (player.dx < -player.speed)
+			    {
+			      player.dx = -player.speed;
+			    }
+			  else if (player.dx > player.speed)
+			    {
+			      player.dx = player.speed;
+			    }
 			}
-		     
-		      player.dx *= 0.92;
-		      
+		      else
+			{
+			  player.dx *= 0.92;
+			}
+
+		      player.flip = false;
+		      if (player.dx < 0)
+			{
+			  player.flip = true;
+			}
+		   		      
 		      player.x += player.dx;
 		      player.y += player.dy;
 		    }
@@ -302,9 +333,8 @@ int WINAPI WinMain(
 	  time += 10;
 	  render_vaporwave();
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
-	  draw_rectangle(player.x, player.y, player.width, player.height, player.color);
 	  draw_rectangle((int)wall.x, (int)wall.y, (int)wall.width, (int)wall.height, (int)wall.color);
-	  draw_sprite(sprite, (int)player.x, (int)player.y);
+	  draw_sprite(sprite, (int)player.x, (int)player.y, player.flip);
 	  
 	  HDC device_context = GetWindowDC(window_handle);
 
