@@ -45,7 +45,7 @@ static void load_ppm(sprite_t* sprite, const char* path)
 
       fscanf(file, "P6\n %d %d\n", &sprite->width, &sprite->height);
       fseek(file, sizeof(char), SEEK_CUR);
-      sprite->pixels = (u32*)malloc(sprite->width * sprite->height * sizeof(u32));
+      sprite->pixels = (u32*)malloc(sprite->width * sprite->height * 4);
 
       printf("%d %d\n", sprite->width, sprite->height);
 
@@ -72,7 +72,7 @@ static void draw_sprite(sprite_t sprite, int x, int y, bool flip)
   u8* row = (u8*)bitmap_memory;
   int line_offset = bitmap_width * bytes_per_pixel;
 
-  for (int i = sprite.height; i > 0; i--)
+  for (int i = 0; i < sprite.height; i++)
     {
       u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
 
@@ -80,18 +80,25 @@ static void draw_sprite(sprite_t sprite, int x, int y, bool flip)
 	{
 	  for (int j = 0; j < sprite.width; j++)
 	    {
-	      *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
-	      pixel++; // offset pixel by one (move to the next memory address)
+	      if (i > 0 && i < bitmap_height && j > 0 && j < bitmap_width)
+		{
+		  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
+		  pixel++; // offset pixel by one (move to the next memory address)
+		}
 	    }
 	}
       else
 	{
 	   for (int j = sprite.width; j > 0; j--)
 	    {
-	      *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
-	      pixel++; // offset pixel by one (move to the next memory address)
+	      if (i > 0 && i < bitmap_height && j > 0 && j < bitmap_width)
+		{
+		  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
+		  pixel++; // offset pixel by one (move to the next memory address)
+		}
 	    }
 	}
+      
       row += line_offset;
     }
 
@@ -161,7 +168,7 @@ static void win32_resize_dib_section(
   
   bitmap_info.bmiHeader.biSize = sizeof(bitmap_info.bmiHeader);
   bitmap_info.bmiHeader.biWidth = width;
-  bitmap_info.bmiHeader.biHeight = height;
+  bitmap_info.bmiHeader.biHeight = -height;
   bitmap_info.bmiHeader.biPlanes = 1;
   bitmap_info.bmiHeader.biBitCount = 32;
   bitmap_info.bmiHeader.biCompression = BI_RGB;
@@ -263,9 +270,10 @@ int WINAPI WinMain(
 
       wall = make_entity(200, 80, 50, 80, 0x0000FF);
 
-      sprite_t sprite;
+      sprite_t sprite, background;
       load_ppm(&sprite, "braid.ppm");
-      player = make_entity(30, 20, sprite.width, sprite.height, 0xFF00FF);
+      load_ppm(&background, "bg.ppm");
+      player = make_entity(80, 80, sprite.width, sprite.height, 0xFF00FF);
 
       player.speed = 0.69;
       
@@ -331,7 +339,8 @@ int WINAPI WinMain(
 	    }
 	  
 	  time += 10;
-	  render_vaporwave();
+	  //render_vaporwave();
+	  draw_sprite(background, 0, 0, false);
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
 	  draw_rectangle((int)wall.x, (int)wall.y, (int)wall.width, (int)wall.height, (int)wall.color);
 	  draw_sprite(sprite, (int)player.x, (int)player.y, player.flip);
