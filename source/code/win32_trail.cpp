@@ -67,6 +67,20 @@ static void load_ppm(sprite_t* sprite, const char* path)
     }
 }
 
+bool is_colliding(entity_t e1, entity_t e2, int xoffset, int yoffset)
+{
+  if (e1.x + xoffset < e2.x + e2.width &&
+      e1.x + xoffset + e1.width > e2.x &&
+      e1.y + yoffset < e2.y + e2.height &&
+      e1.y + yoffset + e1.height > e2.y)
+    {
+      return true;
+    }
+      
+  
+  return false;
+}
+
 static void draw_sprite(sprite_t sprite, int x, int y, bool flip)
 {
   u8* row = (u8*)bitmap_memory;
@@ -268,12 +282,12 @@ int WINAPI WinMain(
     {
       running = true;
 
-      wall = make_entity(200, 80, 50, 80, 0x0000FF);
+      wall = make_entity(20, 340, 360, 80, 0x0000FF);
 
       sprite_t sprite, background;
       load_ppm(&sprite, "player.ppm");
       load_ppm(&background, "bg.ppm");
-      player = make_entity(80, 80, sprite.width, sprite.height, 0xFF00FF);
+      player = make_entity(100, 80, sprite.width, sprite.height, 0xFF00FF);
 
       player.speed = 0.69;
       
@@ -331,14 +345,56 @@ int WINAPI WinMain(
 			{
 			  player.flip = true;
 			}
-		   		      
-		      player.x += player.dx;
-		      player.y += player.dy;
 		    }
 		}
 	    }
+
+	  if (is_colliding(player, wall, (int)player.dx * 2, 0))
+	    {
+	      if (player.dx < 0)
+		{
+		  player.x = wall.x + wall.width;
+		}
+	      else if (player.dx > 0)
+		{
+		  player.x = wall.x - player.width;
+		}
+
+	      player.dx = 0;
+	    }
 	  
-	  time += 10;
+	  player.x += player.dx;
+
+	  if (is_colliding(player, wall, 0, (int)player.dy * 2))
+	    {
+	      if (player.dy < 0)
+		{
+		  player.y = wall.y + wall.height;
+		}
+	      else if (player.dy > 0)
+		{
+		  player.y = wall.y - player.height;
+		}
+
+	      player.dy = 0;
+	    }
+	  else
+	    {
+	      player.dy += 0.002;
+	    }
+
+	  player.y += player.dy;
+
+	  if (player.x < 0)
+	    {
+	      player.x = 0;
+	    }
+	  else if (player.x > 640 - player.width)
+	    {
+	      player.x = 640 - player.width;
+	    }
+	  
+	  //time += 10;
 	  //render_vaporwave();
 	  draw_sprite(background, 0, 0, false);
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
