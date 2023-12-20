@@ -51,12 +51,12 @@ static void load_ppm(sprite_t* sprite, const char* path)
 
       for (int i = 0; i < sprite->width * sprite->height; i++)
 	{
-	  char r, g, b;
+	  u8 r, g, b;
 	  fread(&r, 1, 1, file);
 	  fread(&g, 1, 1, file);
 	  fread(&b, 1, 1, file);
 
-	  sprite->pixels[i] = (r << 16) | (g << 8) | b;
+	  sprite->pixels[i] = r << 16 | g << 8 | b;
 	}
 	  
       fclose(file);
@@ -271,7 +271,7 @@ int WINAPI WinMain(
       wall = make_entity(200, 80, 50, 80, 0x0000FF);
 
       sprite_t sprite, background;
-      load_ppm(&sprite, "braid.ppm");
+      load_ppm(&sprite, "player.ppm");
       load_ppm(&background, "bg.ppm");
       player = make_entity(80, 80, sprite.width, sprite.height, 0xFF00FF);
 
