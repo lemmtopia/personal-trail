@@ -7,16 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "trail.h"
+#include "./trail.h"
+#include "./trail.cpp"
 
 static bool running = false;
 
-static void *bitmap_memory;
 static BITMAPINFO bitmap_info;
-static int bitmap_width, bitmap_height;
-static int bytes_per_pixel = 4;
-
-static int time = 0;
 
 entity_t player;
 entity_t wall;
@@ -36,140 +32,7 @@ static void win32_load_xinput()
 	}
 }
 
-static void load_ppm(sprite_t* sprite, const char* path)
-{
-  FILE* file = fopen(path, "rb");
-  if (file != NULL)
-    {
-      //TODO: Error handling
 
-      fscanf(file, "P6\n %d %d\n", &sprite->width, &sprite->height);
-      fseek(file, sizeof(char), SEEK_CUR);
-      sprite->pixels = (u32*)malloc(sprite->width * sprite->height * 4);
-
-      printf("%d %d\n", sprite->width, sprite->height);
-
-      for (int i = 0; i < sprite->width * sprite->height; i++)
-	{
-	  char r, g, b;
-	  fread(&r, 1, 1, file);
-	  fread(&g, 1, 1, file);
-	  fread(&b, 1, 1, file);
-
-	  sprite->pixels[i] = (r << 16) | (g << 8) | b;
-	}
-	  
-      fclose(file);
-    }
-  else
-    {
-      printf("could not open file");
-    }
-}
-
-bool is_colliding(entity_t e1, entity_t e2, int xoffset, int yoffset)
-{
-  if (e1.x + xoffset < e2.x + e2.width &&
-      e1.x + xoffset + e1.width > e2.x &&
-      e1.y + yoffset < e2.y + e2.height &&
-      e1.y + yoffset + e1.height > e2.y)
-    {
-      return true;
-    }
-      
-  
-  return false;
-}
-
-static void draw_sprite(sprite_t sprite, int x, int y, bool flip)
-{
-  u8* row = (u8*)bitmap_memory;
-  int line_offset = bitmap_width * bytes_per_pixel;
-
-  for (int i = 0; i < sprite.height; i++)
-    {
-      u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
-
-      if (!flip)
-	{
-	  for (int j = 0; j < sprite.width; j++)
-	    {
-	      if (i > 0 && i < bitmap_height && j > 0 && j < bitmap_width)
-		{
-		  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
-		  pixel++; // offset pixel by one (move to the next memory address)
-		}
-	    }
-	}
-      else
-	{
-	   for (int j = sprite.width; j > 0; j--)
-	    {
-	      if (i > 0 && i < bitmap_height && j > 0 && j < bitmap_width)
-		{
-		  *pixel = sprite.pixels[(i * sprite.width) + j]; // set the value that pixel is pointing to
-		  pixel++; // offset pixel by one (move to the next memory address)
-		}
-	    }
-	}
-      
-      row += line_offset;
-    }
-
-}
-
-entity_t make_entity(
-		     int x,
-		     int y,
-		     int width,
-		     int height,
-                     u32 color)
-{
-  entity_t ent;
-
-  ent.x = x;
-  ent.y = y;
-  ent.width = width;
-  ent.height = height;
-  ent.color = color;
-    
-  return ent;
-}
-
-static void render_vaporwave()
-{
-  u8* row = (u8*)bitmap_memory;
-  int line_offset = bitmap_width * bytes_per_pixel;
-  for (int i = 0; i < bitmap_height; i++)
-    {
-      u32* pixel = (u32*)row;
-      for (int j = 0; j < bitmap_width; j++)
-	{
-	  *pixel = i * j + time; // set the value that pixel is pointing to
-	  pixel++; // offset pixel by one (move to the next memory address)
-	}
-      row += line_offset;
-    }
-}
-
-static void draw_rectangle(int x, int y, int width, int height, u32 color)
-{
-  u8* row = (u8*)bitmap_memory;
-  int line_offset = bitmap_width * bytes_per_pixel;
-  for (int i = 0; i < height; i++)
-    {
-      u32* pixel = (u32*)(row + (x * bytes_per_pixel) + (y * line_offset));
-      for (int j = 0; j < width; j++)
-	{
-	  if (i > 0 && i < bitmap_height - height && j > 0 && j < bitmap_width - width)
-	    {
-	      *pixel = color; // set the value that pixel is pointing to
-	      pixel++; // offset pixel by one (move to the next memory address)
-	    }
-	}
-      row += line_offset;
-    }
-}
 
 static void win32_resize_dib_section(
 				     int width,
@@ -285,11 +148,12 @@ int WINAPI WinMain(
       wall = make_entity(20, 340, 360, 80, 0x0000FF);
 
       sprite_t sprite, background;
-      load_ppm(&sprite, "braid.ppm");
+      load_ppm(&sprite, "player.ppm");
       load_ppm(&background, "bg.ppm");
       player = make_entity(100, 80, sprite.width, sprite.height, 0xFF00FF);
 
       player.speed = 0.69;
+      player.dx = 1;
       
       win32_load_xinput();
   
@@ -302,7 +166,7 @@ int WINAPI WinMain(
 	      DispatchMessage(&message);
 	    }
 
-	  if (xinput_loaded)
+	  if (xinput_loaded && time > 5)
 	    {
 	      for (int i = 0; i < XUSER_MAX_COUNT; i++)
 		{
@@ -349,52 +213,10 @@ int WINAPI WinMain(
 		}
 	    }
 
-	  if (is_colliding(player, wall, (int)player.dx * 2, 0))
-	    {
-	      if (player.dx < 0)
-		{
-		  player.x = wall.x + wall.width;
-		}
-	      else if (player.dx > 0)
-		{
-		  player.x = wall.x - player.width;
-		}
-
-	      player.dx = 0;
-	    }
-	  
 	  player.x += player.dx;
-
-	  if (is_colliding(player, wall, 0, (int)player.dy * 2))
-	    {
-	      if (player.dy < 0)
-		{
-		  player.y = wall.y + wall.height;
-		}
-	      else if (player.dy > 0)
-		{
-		  player.y = wall.y - player.height;
-		}
-
-	      player.dy = 0;
-	    }
-	  else
-	    {
-	      player.dy += 0.002;
-	    }
-
 	  player.y += player.dy;
-
-	  if (player.x < 0)
-	    {
-	      player.x = 0;
-	    }
-	  else if (player.x > 640 - player.width)
-	    {
-	      player.x = 640 - player.width;
-	    }
 	  
-	  //time += 10;
+	  time++;
 	  //render_vaporwave();
 	  draw_sprite(background, 0, 0, false);
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);

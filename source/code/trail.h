@@ -21,6 +21,12 @@ struct sprite_t
   u32* pixels;
 };
 
+static void *bitmap_memory;
+static int bitmap_width, bitmap_height;
+static int bytes_per_pixel = 4;
+
+static int time = 0;
+
 entity_t make_entity(int x, int y, int width, int height, u32 color);
 
 static void render_vaporwave();
