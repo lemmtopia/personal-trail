@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "./trail.h"
+#include "trail.h"
 
 static void load_ppm(sprite_t* sprite, const char* path)
 {

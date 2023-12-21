@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "./trail.h"
-#include "./trail.cpp"
+#include "trail.h"
+#include "trail.cpp"
 
 static bool running = false;
 
@@ -166,8 +166,8 @@ int WINAPI WinMain(
       wall = make_entity(20, 340, 360, 80, 0x0000FF);
 
       sprite_t player_sprite, background;
-      load_ppm(&player_sprite, "player.ppm");
-      load_ppm(&background, "bg.ppm");
+      load_ppm(&player_sprite, "assets/player.ppm");
+      load_ppm(&background, "assets/bg.ppm");
       player = make_entity(100, 120, player_sprite.width, player_sprite.height, 0xFF00FF);
 
       player.speed = 0.69;
