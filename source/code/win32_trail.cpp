@@ -24,15 +24,33 @@ bool xinput_loaded;
 
 static void win32_load_xinput()
 {
-	HMODULE xinput_dll = LoadLibraryA("XInput1_4.dll");
-	if (xinput_dll)
-	{
-		win32_XInputGetState = (win32_xinput_get_state*)GetProcAddress(xinput_dll, "XInputGetState");
-		xinput_loaded = true;
-	}
+  HMODULE xinput_dll = LoadLibraryA("XInput1_4.dll");
+  if (xinput_dll)
+    {
+      win32_XInputGetState = (win32_xinput_get_state*)GetProcAddress(xinput_dll, "XInputGetState");
+      xinput_loaded = true;
+    }
 }
 
+static int win32_get_keyboard_keys()
+{
+  int key_comb = 0;
+  
+  if (GetKeyState(VK_RIGHT) & 0x8000)
+    {
+      key_comb++;
+    }
+  if (GetKeyState(VK_LEFT) & 0x8000)
+    {
+      key_comb += 2;
+    }
+  if (GetKeyState(VK_SPACE) & 0x8000)
+    {
+      key_comb += 4;
+    }
 
+  return key_comb;
+}
 
 static void win32_resize_dib_section(
 				     int width,
@@ -147,10 +165,10 @@ int WINAPI WinMain(
 
       wall = make_entity(20, 340, 360, 80, 0x0000FF);
 
-      sprite_t sprite, background;
-      load_ppm(&sprite, "player.ppm");
+      sprite_t player_sprite, background;
+      load_ppm(&player_sprite, "player.ppm");
       load_ppm(&background, "bg.ppm");
-      player = make_entity(100, 80, sprite.width, sprite.height, 0xFF00FF);
+      player = make_entity(100, 120, player_sprite.width, player_sprite.height, 0xFF00FF);
 
       player.speed = 0.69;
       player.dx = 1;
@@ -180,37 +198,56 @@ int WINAPI WinMain(
 		      bool button_x = (gamepad->wButtons & XINPUT_GAMEPAD_X);
 		      bool button_y = (gamepad->wButtons & XINPUT_GAMEPAD_Y);
 		      
-		      bool left = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
-		      bool right = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+		      //bool left = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+		      //bool right = (gamepad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
 
-		      SHORT stick = gamepad->sThumbLX;
+		      SHORT stick_horizontal = gamepad->sThumbLX;
+		      SHORT stick_vertical = gamepad->sThumbLY;
 		      
-		      
-		      if (stick < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE || stick > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
+		      if (stick_horizontal < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE || stick_horizontal > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
 			{
-			  player.dx += (float)stick / 4000000;
-
-			  if (player.dx < -player.speed)
-			    {
-			      player.dx = -player.speed;
-			    }
-			  else if (player.dx > player.speed)
-			    {
-			      player.dx = player.speed;
-			    }
-			}
-		      else
-			{
-			  player.dx *= 0.92;
-			}
-
-		      player.flip = false;
-		      if (player.dx < 0)
-			{
-			  player.flip = true;
-			}
+			  player.dx += (float)stick_horizontal / 400000;
+			}		     
 		    }
 		}
+	    }
+
+	  int keys = win32_get_keyboard_keys();
+	  if (keys == 1)
+	    {
+	      player.dx += 0.1;
+	    }
+	  else if (keys == 2)
+	    {
+	      player.dx -= 0.1;
+	    }
+	  else
+	    {
+	      player.dx *= 0.92;
+	    }
+	  
+	  if (player.dx < -player.speed)
+	    {
+	      player.dx = -player.speed;
+	    }
+	  else if (player.dx > player.speed)
+	    {
+	      player.dx = player.speed;
+	    }
+      
+	  if (player.x < 0)
+	    {
+	      player.x = 0;
+	    }
+	  else if (player.x > 640 - player.width)
+	    {
+	      player.x = 640 - player.width;
+	     }
+	  
+	  player.flip = false;
+	  if (player.dx < 0)
+	    {
+	      player.flip = true;
 	    }
 
 	  player.x += player.dx;
@@ -221,7 +258,7 @@ int WINAPI WinMain(
 	  draw_sprite(background, 0, 0, false);
 	  draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
 	  draw_rectangle((int)wall.x, (int)wall.y, (int)wall.width, (int)wall.height, (int)wall.color);
-	  draw_sprite(sprite, (int)player.x, (int)player.y, player.flip);
+	  draw_sprite(player_sprite, (int)player.x, (int)player.y, player.flip);
 	  
 	  HDC device_context = GetWindowDC(window_handle);
 
