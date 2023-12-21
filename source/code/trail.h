@@ -36,6 +36,6 @@ static void load_ppm(sprite_t* sprite, const char* path);
 static void draw_sprite(sprite_t sprite, int x, int y, bool flip);
 
 static int win32_get_keyboard_keys();
-static void update_player(entity_t* player);
+//static void update_player(entity_t* player);
 
 #endif

@@ -18,7 +18,10 @@ entity_t player;
 entity_t wall;
 
 typedef DWORD WINAPI win32_xinput_get_state(DWORD dwUserIndex, XINPUT_STATE* pState);
-static win32_xinput_get_state* win32_XInputGetState;
+static win32_xinput_get_state *win32_XInputGetState;
+
+typedef void WINAPI update_player_t(entity_t* player);
+static update_player_t *update_player;
 
 bool xinput_loaded;
 static void win32_load_xinput()
@@ -33,24 +36,14 @@ static void win32_load_xinput()
      }
 }
 
-static int win32_get_keyboard_keys()
+static void win32_load_game()
 {
-     int key_comb = 0;
-     
-     if (GetKeyState(VK_RIGHT) & 0x8000)
+     HMODULE game_dll = LoadLibraryA("game.dll");
+     if (game_dll)
      {
-	  key_comb++;
+	  update_player = (update_player_t*)GetProcAddress(game_dll, "update_player");
+	  running = true;
      }
-     if (GetKeyState(VK_LEFT) & 0x8000)
-     {
-	  key_comb += 2;
-     }
-     if (GetKeyState(VK_SPACE) & 0x8000)
-     {
-	  key_comb += 4;
-     }
-     
-     return key_comb;
 }
 
 static void win32_resize_dib_section(
@@ -162,8 +155,8 @@ int WINAPI WinMain(
      
      if (window_handle)
      {
-	  running = true;
-	  
+	  running = false;
+	  win32_load_game();
 	  wall = make_entity(20, 340, 360, 80, 0x0000FF);
 	  
 	  sprite_t player_sprite, background;
