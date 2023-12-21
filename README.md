@@ -16,4 +16,4 @@ Feel free to fork it, but I probably will not accept PRs.
 
 ### License
 
-THe project is licensed under the MIT license. See `LICENSE`.
+The project is licensed under the MIT license. See `LICENSE`.
