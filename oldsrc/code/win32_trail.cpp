@@ -14,13 +14,13 @@ static bool running = false;
 
 static BITMAPINFO bitmap_info;
 
-entity_t player;
-entity_t wall;
+entity_t entities[10];
+int entity_num = 0;
 
 typedef DWORD WINAPI win32_xinput_get_state(DWORD dwUserIndex, XINPUT_STATE* pState);
 static win32_xinput_get_state *win32_XInputGetState;
 
-typedef void WINAPI update_player_t(entity_t* player);
+typedef void WINAPI update_player_t(entity_t* player); // Function pointer to the DLL function.
 static update_player_t *update_player;
 
 bool xinput_loaded;
@@ -157,17 +157,21 @@ int WINAPI WinMain(
      {
 	  running = false;
 	  win32_load_game();
-	  wall = make_entity(20, 340, 360, 80, 0x0000FF);
+	  entities[1] = make_entity(20, 340, 360, 80, 0x0000FF);
+
+	  entities[1].is_solid = true;
 	  
 	  sprite_t player_sprite, background;
 	  load_ppm(&player_sprite, "assets/player.ppm");
 	  load_ppm(&background, "assets/bg.ppm");
-	  player = make_entity(100, 120, player_sprite.width, player_sprite.height, 0xFF00FF);
+	  entities[0] = make_entity(100, 120, player_sprite.width, player_sprite.height, 0xFF00FF);
 	  
-	  player.speed = 0.69;
-	  player.dx = 1;
+	  entities[0].speed = 0.69;
+	  entities[0].dx = 1;
 	  
 	  win32_load_xinput();
+
+	  entity_num = 2;
 	  
 	  while (running)
 	  {
@@ -201,22 +205,27 @@ int WINAPI WinMain(
 			      
 			      if (stick_horizontal < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE || stick_horizontal > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
 			      {
-				   player.dx += (float)stick_horizontal / 400000;
+				   entities[0].dx += (float)stick_horizontal / 400000;
 			      }		     
 			 }
 		    }
 	       }
 	       
 	       // General player stuff
-	       update_player(&player);
+	       update_player(&entities[0]); // first entity will always be the player
 	       
 	       // Rendering stuff
 	       time++;
 	       //render_vaporwave();
 	       draw_sprite(background, 0, 0, false);
 	       draw_rectangle(50, 40, 180, 80, 0xFFFFFF);
-	       draw_rectangle((int)wall.x, (int)wall.y, (int)wall.width, (int)wall.height, (int)wall.color);
-	       draw_sprite(player_sprite, (int)player.x, (int)player.y, player.flip);
+
+	       for (int i = 1; i < entity_num; i++)
+	       {
+		    draw_rectangle((int)entities[i].x, (int)entities[i].y, (int)entities[i].width, (int)entities[i].height, (int)entities[i].color);	    
+	       }
+
+	       draw_sprite(player_sprite, (int)entities[0].x, (int)entities[0].y, entities[0].flip);
 	       
 	       HDC device_context = GetWindowDC(window_handle);
 	       
