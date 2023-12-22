@@ -16,13 +16,6 @@ LRESULT CALLBACK win32_window_proc(
 
 	switch (message)
 	{
-		case WM_PAINT:
-		{
-			PAINTSTRUCT paint;
-			BeginPaint(window_handle, &paint);
-
-			EndPaint(window_handle, &paint);
-		} break;
 		case WM_QUIT:
 		{
 			running = false;
