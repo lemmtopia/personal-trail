@@ -13,7 +13,6 @@ struct entity_t
      u32 color;
      bool flip;
      float speed;
-     bool is_solid;
 };
 
 struct sprite_t
